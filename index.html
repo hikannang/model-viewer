@@ -1,0 +1,128 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1.0" />
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+    <script src="./aframe-gif-shader-master/dist/aframe-gif-shader.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="./static/css/style.css" />
+    <link href='https://fonts.googleapis.com/css?family=Roboto' rel='stylesheet'> 
+  </head>
+  <body style="margin: 0; background-color: black;">
+    <!-- id="UI-overlay" fixes the issue where the AR content gets cutoff at where the buttons are -->
+    <!-- display flex is to prevent the UI overlay from disappearing when displaying AR content. Can be removed -->
+    <div id="UI-overlay" style="max-height: 100%; max-width: 100%;">
+      <div id="UI-placement">
+        <!-- scanning box crosshair copied from MindAR example -->
+        <div id="scanning-overlay" class="mindar-ui-scanning">
+          <div class="scanning">
+            <div class="inner" id="scanBoxSize">
+              <div class="scanline"></div>
+            </div>
+          </div>
+          <p id="scanBoxP">Scan characters to see AR feature!</p>
+        </div>  
+        
+        <div id="iconsDiv">
+          <div class="btnDiv">
+            <img id="loadModelsButton" src="./static/images/icons/View-Models-button.png" alt="Click to load more Models" onClick="location.href='./models.html'">
+            <p class="btnP">Add Models</p>
+          </div>
+          <p id="pDistance"></p>
+          <div class="btnDiv">
+            <img id="moreInfoButton" src="./static/images/icons/More-Info-Button.png" alt="Info Button" onClick="console.log('info button clicked')">
+            <p class="btnP">More Info</p>
+          </div>
+          
+        </div>  
+  
+      </div>
+
+    </div>  
+
+    <a-scene mindar-image="imageTargetSrc: ./static/mind-file/cny.mind; uiScanning: #scanning-overlay; filterMinCF:0.0001; filterBeta: 0.001;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false" embedded>
+
+      <a-assets>
+        <a-asset-item id="chinese_dragon_trim" src="./static/3D-file/gltf/chinese_dragon_trim/test1.gltf"></a-asset-item>
+        <img id="pigAnimationGif" src="./static/image-animation/piganimation/piganimation.gif">
+        <img id="dragonAnimationGif" src="./static/image-animation/dragonanimation/dragonanimation.gif">
+      </a-assets>
+
+      <a-entity id="example-target" follow-camera-rotation mindar-image-target="targetIndex: 0">   
+        <a-gltf-model src="#chinese_dragon_trim" rotation="0 0 0 " position="0 -0.5 0.1" scale="0.0005 0.0005 0.0005" animation-mixer></a-gltf-model>
+      </a-entity>
+
+      <!-- 1.2 -2.125 -1 Reset position to the aforemention values if not working. -->
+      <a-entity id="example-target" follow-camera-rotation mindar-image-target="targetIndex: 2" geometry="primitive:plane;width:1;height:1;" position="0 0 0" material="shader:gif;src:#pigAnimationGif;transparent:true;color:#FFF;"></a-entity>
+
+      <a-entity id="example-target" follow-camera-rotation mindar-image-target="targetIndex: 3" geometry="primitive:plane;width:1.5;height:2.5;" position="0 0 0" material="shader:gif;src:#dragonAnimationGif;transparent:true;color:#FFF;"></a-entity>
+
+      <a-camera position="0 0 0" look-controls="enabled: false" cursor="fuse: false; rayOrigin: mouse;" raycaster="far: ${customFields.libVersion}; objects: .clickable"></a-camera>
+
+    </a-scene>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const sceneEl = document.querySelector("a-scene");
+        let arSystem;
+        sceneEl.addEventListener("loaded", function () {
+          arSystem = sceneEl.systems["mindar-image-system"];
+        });
+        1;
+
+        const exampleTarget = document.querySelector("#example-target");
+
+        const startButton = document.querySelector("#example-start-button");
+        const stopButton = document.querySelector("#example-stop-button");
+        const pauseButton = document.querySelector("#example-pause-button");
+        const pauseKeepVideoButton = document.querySelector("#example-pause-keep-video-button");
+        const unpauseButton = document.querySelector("#example-unpause-button");
+
+        // arReady event triggered when ready
+        sceneEl.addEventListener("arReady", (event) => {
+          // console.log("MindAR is ready")
+        });
+        // arError event triggered when something went wrong. Mostly browser compatbility issue
+        sceneEl.addEventListener("arError", (event) => {
+          // console.log("MindAR failed to start")
+        });
+        // detect target found
+        exampleTarget.addEventListener("targetFound", (event) => {
+          console.log("target found");
+          document.getElementById("vid").play();
+        });
+        // detect target lost
+        exampleTarget.addEventListener("targetLost", (event) => {
+          console.log("target lost");
+          document.getElementById("vid").pause();
+        });
+
+        //Camera Tracking
+        AFRAME.registerComponent('follow-camera-rotation', {
+          tick: function (time, deltaTime) {
+            // Track the number of frames
+            this.frameCount = (this.frameCount || 0) + 1;
+
+            // Update rotation every 24 frames (adjust as needed)
+            if (this.frameCount % 24 === 0) {
+              // Assuming 'this.el' is the entity you want to rotate to match the camera's rotation
+              var cameraEl = document.querySelector('a-camera'); // Get the camera entity
+              if (cameraEl) {
+                // Copy the camera's quaternion to the entity
+                this.el.object3D.quaternion.copy(cameraEl.object3D.quaternion);
+              }
+            }  
+          }
+        });  
+
+
+      screen.orientation.addEventListener("change", () => {
+        // window.location.reload();
+        arSystem.stop();
+        arSystem.start();
+      });
+
+
+      });
+    </script>
+  </body>
+</html>
